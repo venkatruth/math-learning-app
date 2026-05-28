@@ -261,23 +261,24 @@ function finish(){
  setTimeout(()=>loadDashboard(currentUser),1500);
 }
 
+
 // ✅ GOOGLE SHEET (FIXED)
 function saveScoreToSheet(name, score) {
  const url = "https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
 
  fetch(url,{
   method:"POST",
+  mode:"no-cors",   // ✅ KEY FIX
   body:JSON.stringify({name:name,score:score}),
-  headers:{"Content-Type":"application/json"}
- })
- .then(res => res.text())
- .then(data => {
-   console.log("✅ Saved:", data);
- })
- .catch(err => {
-   console.error("❌ Save failed:", err);
+  headers:{
+    "Content-Type":"application/json"
+  }
  });
+
+ console.log("✅ Attempted to save:", name, score);
 }
+
+
 
 function loadDashboard(name){
  const url = "https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
