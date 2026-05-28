@@ -4,10 +4,6 @@
   <title>Math Learning App</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- ✅ PWA -->
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#2c3e50">
-
   <style>
     body { font-family: Arial; text-align:center; padding:20px; }
 
@@ -33,10 +29,6 @@
       border-radius:10px;
       transition: width 0.4s;
     }
-
-    @keyframes fall {
-      to { transform: translateY(100vh); }
-    }
   </style>
 </head>
 
@@ -44,7 +36,6 @@
 
 <h2>📘 Math Learning App</h2>
 
-<!-- ✅ STUDENT SELECT -->
 <select id="studentSelect">
 <option value="">Select Student</option>
 </select><br><br>
@@ -59,15 +50,14 @@
 </div>
 
 <div id="typeMenu" style="display:none;">
-  <h3>Select Type</h3>
-  <button onclick="beginQuiz('add')">Addition</button>
-  <button onclick="beginQuiz('sub')">Subtraction</button>
-  <button onclick="beginQuiz('mul')">Multiplication</button>
-  <button onclick="beginQuiz('series')">Number Series</button>
+<h3>Select Type</h3>
+<button onclick="beginQuiz('add')">Addition</button>
+<button onclick="beginQuiz('sub')">Subtraction</button>
+<button onclick="beginQuiz('mul')">Multiplication</button>
+<button onclick="beginQuiz('series')">Number Series</button>
 </div>
 
 <div id="quiz" style="display:none;">
-
 <div style="width:100%; background:#ddd;">
 <div id="progressBar"></div>
 </div><br>
@@ -77,141 +67,34 @@
 <input id="answer" oninput="enableBtn()" onkeypress="if(event.key==='Enter') checkAnswer()"><br><br>
 
 <button id="submitBtn" onclick="checkAnswer()" disabled>Submit</button>
-
 <p id="feedback"></p>
-
 </div>
 
 <div id="resultBox" style="display:none;">
 <h3 id="result"></h3>
 <h2 id="stars"></h2>
-<p id="achievement"></p>
 </div>
-
 
 <div id="dashboard" style="display:none;">
-  <h2>📊 Student Dashboard</h2>
+<h2>📊 Student Dashboard</h2>
+<h3 id="bestScore"></h3>
 
-  <h3 id="bestScore"></h3>
-
-  <div style="max-height:200px; overflow:auto;">
-    <table border="1" style="margin:auto;">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Score</th>
-        </tr>
-      </thead>
-      <tbody id="historyTable"></tbody>
-    </table>
-  </div>
+<table border="1" style="margin:auto;">
+<thead>
+<tr><th>Date</th><th>Score</th></tr>
+</thead>
+<tbody id="historyTable"></tbody>
+</table>
 </div>
-
 
 <script>
 
-let currentUser="";
-let questions=[];
-let index=0, score=0;
+let currentUser="", questions=[], index=0, score=0;
+let selectedLevel="";
 
 let correct=["Fantastic!","Superstar!","Brilliant!","Champion!","On fire!"];
-let wrong=["Nice try!","Almost!","Try again","Keep going!"];
-
-function speak(t){ speechSynthesis.speak(new SpeechSynthesisUtterance(t)); }
 
 function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
-
-// ✅ QUESTIONS
-function addQ(level){
-  let count = rand(2,6);
-
-  let min=0, max=9;
-  if(level==="medium"){max=49;}
-  if(level==="hard"){max=100;}
-
-  let nums=[], sum=0;
-
-  for(let i=0;i<count;i++){
-    let n = rand(min,max);
-    nums.push(n);
-    sum += n;
-  }
-
-  return {q: nums.join(" + ") + " = ?", a: sum};
-}
-
-
-function subQ(level){
-  let min=0, max=9;
-  if(level==="medium"){max=49;}
-  if(level==="hard"){max=100;}
-
-  let a = rand(min,max);
-  let b = rand(min,a); // ensures no negative
-
-  return {q: a + " - " + b + " = ?", a: a-b};
-}
-
-
-
-function mulQ(level){
-  let count = rand(2,3);
-
-  let min=0, max=9;
-  if(level==="medium"){max=12;}
-  if(level==="hard"){max=20;}
-
-  let nums=[];
-
-  for(let i=0;i<count;i++){
-    nums.push(rand(1,max));
-  }
-
-  return {
-    q: nums.join(" × "),
-    a: nums.reduce((x,y)=>x*y)
-  };
-}
-
-
-function seriesQ(level){
-
-  let stepOptions = [1,2,3,-1,-2,-3];
-  let step = stepOptions[rand(0,5)];
-
-  let start=rand(0,30);
-  let arr=[];
-
-  for(let i=0;i<5;i++){
-    arr.push(start + i*step);
-  }
-
-  let missingIndex = rand(1,3);
-  let ans = arr[missingIndex];
-  arr[missingIndex] = "__";
-
-  return {q: arr.join(", "), a: ans};
-}
-
-
-function generateQuestions(level, type){
-  let arr = [];
-
-  for(let i = 0; i < 10; i++){
-    if(type === "add") arr.push(addQ(level));
-    else if(type === "sub") arr.push(subQ(level));
-    else if(type === "mul") arr.push(mulQ(level));
-    else arr.push(seriesQ(level));
-  }
-
-  return arr;
-}
-
-// ✅ PROGRESS
-function updateBar(){
- let p=(index/questions.length)*100;
- document.getElementById("progressBar").style.width=p+"%";
-}
 
 // ✅ STUDENTS
 function loadStudents(){
@@ -229,9 +112,13 @@ function startApp(){
  let s=document.getElementById("studentSelect").value;
  let n=document.getElementById("newStudent").value.trim();
 
- if(n){ currentUser=n;
+ if(n){
+  currentUser=n;
   let list=JSON.parse(localStorage.getItem("students")||"[]");
-  if(!list.includes(n)){ list.push(n); localStorage.setItem("students",JSON.stringify(list)); }
+  if(!list.includes(n)){
+    list.push(n);
+    localStorage.setItem("students",JSON.stringify(list));
+  }
  }
  else if(s){ currentUser=s; }
  else return alert("Enter/select name");
@@ -239,43 +126,100 @@ function startApp(){
  document.getElementById("menu").style.display="block";
 }
 
-// ✅ QUIZ
-let selectedLevel = "";
-
+// ✅ FLOW
 function startQuiz(level){
-  selectedLevel = level;
-  document.getElementById("typeMenu").style.display = "block";
+ selectedLevel=level;
+ document.getElementById("menu").style.display="none";
+ document.getElementById("typeMenu").style.display="block";
 }
 
-//NEW Function
 function beginQuiz(type){
-  questions = generateQuestions(selectedLevel, type);
-  index = 0; score = 0;
+ questions=generateQuestions(selectedLevel,type);
+ index=0; score=0;
 
-  document.getElementById("typeMenu").style.display = "none";
-  document.getElementById("quiz").style.display = "block";
-
-  showQ();
+ document.getElementById("typeMenu").style.display="none";
+ document.getElementById("quiz").style.display="block";
+ showQ();
 }
 
-// ✅ SHOW
+// ✅ QUESTIONS
+function addQ(level){
+ let count=rand(2,6);
+ let max=9;
+ if(level==="medium") max=49;
+ if(level==="hard") max=100;
+
+ let nums=[], sum=0;
+ for(let i=0;i<count;i++){
+  let n=rand(0,max);
+  nums.push(n);
+  sum+=n;
+ }
+ return {q:nums.join(" + ")+" = ?",a:sum};
+}
+
+function subQ(level){
+ let max=9;
+ if(level==="medium") max=49;
+ if(level==="hard") max=100;
+
+ let a=rand(0,max);
+ let b=rand(0,a);
+ return {q:a+" - "+b+" = ?",a:a-b};
+}
+
+function mulQ(level){
+ let count=rand(2,3);
+ let max=9;
+ if(level==="medium") max=12;
+ if(level==="hard") max=20;
+
+ let nums=[];
+ for(let i=0;i<count;i++) nums.push(rand(1,max));
+
+ return {q:nums.join(" × "),a:nums.reduce((x,y)=>x*y)};
+}
+
+function seriesQ(){
+ let steps=[1,2,3,-1,-2,-3];
+ let step=steps[rand(0,5)];
+ let start=rand(0,30);
+
+ let arr=[];
+ for(let i=0;i<5;i++) arr.push(start+i*step);
+
+ let m=rand(1,3);
+ let ans=arr[m];
+ arr[m]="__";
+
+ return {q:arr.join(","),a:ans};
+}
+
+function generateQuestions(level,type){
+ let arr=[];
+ for(let i=0;i<10;i++){
+  if(type==="add") arr.push(addQ(level));
+  else if(type==="sub") arr.push(subQ(level));
+  else if(type==="mul") arr.push(mulQ(level));
+  else arr.push(seriesQ());
+ }
+ return arr;
+}
+
+// ✅ QUIZ
 function showQ(){
  if(index>=questions.length) return finish();
 
  document.getElementById("answer").value="";
  document.getElementById("submitBtn").disabled=true;
-
  document.getElementById("question").innerText=questions[index].q;
- document.getElementById("answer").focus();
 }
 
-// ✅ BUTTON
 function enableBtn(){
- let v=document.getElementById("answer").value.trim();
- document.getElementById("submitBtn").disabled=(v==="");
+ document.getElementById("submitBtn").disabled=
+ document.getElementById("answer").value.trim()==="";
 }
 
-// ✅ CHECK
 function checkAnswer(){
  let user=document.getElementById("answer").value;
  let correctAnswer=questions[index].a;
@@ -289,19 +233,21 @@ function checkAnswer(){
 
  index++;
  updateBar();
-
  setTimeout(showQ,1000);
 }
 
-// ✅ STARS
+function updateBar(){
+ let p=(index/questions.length)*100;
+ document.getElementById("progressBar").style.width=p+"%";
+}
+
+// ✅ RESULT
 function stars(s){
  if(s===10) return "⭐⭐⭐⭐⭐";
  if(s>=8) return "⭐⭐⭐⭐";
  if(s>=6) return "⭐⭐⭐";
  return "⭐⭐";
 }
-
-// ✅ FINISH
 
 function finish(){
  document.getElementById("quiz").style.display="none";
@@ -310,75 +256,49 @@ function finish(){
  document.getElementById("result").innerText=currentUser+" scored "+score+"/10";
  document.getElementById("stars").innerText=stars(score);
 
- // ✅ SAVE TO GOOGLE SHEET
- saveScoreToSheet(currentUser, score);
+ saveScoreToSheet(currentUser,score);
 
-
-// ✅ LOAD DASHBOARD AFTER SAVE
- setTimeout(()=>{
-   loadDashboard(currentUser);
- },1500);
+ setTimeout(()=>loadDashboard(currentUser),1500);
 }
 
-
-
+// ✅ GOOGLE SHEET (FIXED)
 function saveScoreToSheet(name, score) {
-  const url = "https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
+ const url = "https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
 
-  fetch(url, {
-    method: "POST",
-    body: JSON.stringify({
-      name: name,
-      score: score
-    }),
-    headers: {
-      "Content-Type": "application/json"
-    }
-  })
-  .then(res => res.json())
-  .then(data => console.log("Saved:", data))
-  .catch(err => console.error("Error:", err));
+ fetch(url,{
+  method:"POST",
+  body:JSON.stringify({name:name,score:score}),
+  headers:{"Content-Type":"application/json"}
+ });
 }
-
 
 function loadDashboard(name){
-  const url = "https://venkatruth.github.io/math-learning-app/";
+ const url = "https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
 
-  fetch(url)
-    .then(res => res.json())
-    .then(data => {
+ fetch(url)
+ .then(res=>res.json())
+ .then(data=>{
+   let userData=data.filter(d=>d.name===name);
+   if(userData.length===0) return;
 
-      let userData = data.filter(d => d.name === name);
+   let best=Math.max(...userData.map(x=>x.score));
+   document.getElementById("bestScore").innerText=
+   "🏆 Best Score: "+best+"/10";
 
-      if(userData.length === 0) return;
+   let table=document.getElementById("historyTable");
+   table.innerHTML="";
 
-      // ✅ BEST SCORE
-      let best = Math.max(...userData.map(x => x.score));
-      document.getElementById("bestScore").innerText =
-        "🏆 Best Score: " + best + "/10";
+   userData.reverse().forEach(d=>{
+     let tr=document.createElement("tr");
+     let date=new Date(d.date).toLocaleDateString();
 
-      // ✅ HISTORY TABLE
-      let table = document.getElementById("historyTable");
-      table.innerHTML = "";
+     tr.innerHTML="<td>"+date+"</td><td>"+d.score+"/10</td>";
+     table.appendChild(tr);
+   });
 
-      userData.reverse().forEach(d => {
-        let tr = document.createElement("tr");
-
-        let date = new Date(d.date).toLocaleDateString();
-
-        tr.innerHTML = `
-          <td>${date}</td>
-          <td>${d.score}/10</td>
-        `;
-
-        table.appendChild(tr);
-      });
-
-      document.getElementById("dashboard").style.display = "block";
-    })
-    .catch(err => console.error(err));
+   document.getElementById("dashboard").style.display="block";
+ });
 }
-
 
 </script>
 
