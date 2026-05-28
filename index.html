@@ -58,6 +58,14 @@
 <button onclick="startQuiz('hard')">Hard</button>
 </div>
 
+<div id="typeMenu" style="display:none;">
+  <h3>Select Type</h3>
+  <button onclick="beginQuiz('add')">Addition</button>
+  <button onclick="beginQuiz('sub')">Subtraction</button>
+  <button onclick="beginQuiz('mul')">Multiplication</button>
+  <button onclick="beginQuiz('series')">Number Series</button>
+</div>
+
 <div id="quiz" style="display:none;">
 
 <div style="width:100%; background:#ddd;">
@@ -80,6 +88,26 @@
 <p id="achievement"></p>
 </div>
 
+
+<div id="dashboard" style="display:none;">
+  <h2>📊 Student Dashboard</h2>
+
+  <h3 id="bestScore"></h3>
+
+  <div style="max-height:200px; overflow:auto;">
+    <table border="1" style="margin:auto;">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody id="historyTable"></tbody>
+    </table>
+  </div>
+</div>
+
+
 <script>
 
 let currentUser="";
@@ -95,42 +123,88 @@ function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 
 // ✅ QUESTIONS
 function addQ(level){
- let count=rand(2,6);
- let min=1,max=10;
- if(level==="medium"){min=1;max=50;}
- if(level==="hard"){min=1;max=500;}
+  let count = rand(2,6);
 
- let nums=[],sum=0;
- for(let i=0;i<count;i++){let n=rand(min,max);nums.push(n);sum+=n;}
- return {q:nums.join(" + ")+" = ?",a:sum};
+  let min=0, max=9;
+  if(level==="medium"){max=49;}
+  if(level==="hard"){max=100;}
+
+  let nums=[], sum=0;
+
+  for(let i=0;i<count;i++){
+    let n = rand(min,max);
+    nums.push(n);
+    sum += n;
+  }
+
+  return {q: nums.join(" + ") + " = ?", a: sum};
 }
+
+
+function subQ(level){
+  let min=0, max=9;
+  if(level==="medium"){max=49;}
+  if(level==="hard"){max=100;}
+
+  let a = rand(min,max);
+  let b = rand(min,a); // ensures no negative
+
+  return {q: a + " - " + b + " = ?", a: a-b};
+}
+
+
 
 function mulQ(level){
- let nums=[],c=rand(3,5);
- for(let i=0;i<c;i++) nums.push(rand(2,9));
- return {q:nums.join(" × "),a:nums.reduce((x,y)=>x*y)};
+  let count = rand(2,3);
+
+  let min=0, max=9;
+  if(level==="medium"){max=12;}
+  if(level==="hard"){max=20;}
+
+  let nums=[];
+
+  for(let i=0;i<count;i++){
+    nums.push(rand(1,max));
+  }
+
+  return {
+    q: nums.join(" × "),
+    a: nums.reduce((x,y)=>x*y)
+  };
 }
 
-function seriesQ(){
- let s=[1,2,-1,-2][rand(0,3)];
- let start=rand(10,50);
- let arr=[];
- for(let i=0;i<5;i++)arr.push(start+i*s);
- let m=rand(1,3);
- let ans=arr[m];
- arr[m]="__";
- return {q:arr.join(","),a:ans};
+
+function seriesQ(level){
+
+  let stepOptions = [1,2,3,-1,-2,-3];
+  let step = stepOptions[rand(0,5)];
+
+  let start=rand(0,30);
+  let arr=[];
+
+  for(let i=0;i<5;i++){
+    arr.push(start + i*step);
+  }
+
+  let missingIndex = rand(1,3);
+  let ans = arr[missingIndex];
+  arr[missingIndex] = "__";
+
+  return {q: arr.join(", "), a: ans};
 }
 
-function generateQuestions(level){
- let arr=[];
- for(let i=0;i<10;i++){
-  let t=rand(0,2);
-  if(t===0) arr.push(addQ(level));
-  else if(t===1) arr.push(mulQ(level));
-  else arr.push(seriesQ());
- }
- return arr;
+
+function generateQuestions(level, type){
+  let arr = [];
+
+  for(let i = 0; i < 10; i++){
+    if(type === "add") arr.push(addQ(level));
+    else if(type === "sub") arr.push(subQ(level));
+    else if(type === "mul") arr.push(mulQ(level));
+    else arr.push(seriesQ(level));
+  }
+
+  return arr;
 }
 
 // ✅ PROGRESS
@@ -166,11 +240,22 @@ function startApp(){
 }
 
 // ✅ QUIZ
+let selectedLevel = "";
+
 function startQuiz(level){
- questions=generateQuestions(level);
- index=0; score=0;
- document.getElementById("quiz").style.display="block";
- showQ();
+  selectedLevel = level;
+  document.getElementById("typeMenu").style.display = "block";
+}
+
+//NEW Function
+function beginQuiz(type){
+  questions = generateQuestions(selectedLevel, type);
+  index = 0; score = 0;
+
+  document.getElementById("typeMenu").style.display = "none";
+  document.getElementById("quiz").style.display = "block";
+
+  showQ();
 }
 
 // ✅ SHOW
@@ -227,10 +312,18 @@ function finish(){
 
  // ✅ SAVE TO GOOGLE SHEET
  saveScoreToSheet(currentUser, score);
+
+
+// ✅ LOAD DASHBOARD AFTER SAVE
+ setTimeout(()=>{
+   loadDashboard(currentUser);
+ },1500);
 }
 
+
+
 function saveScoreToSheet(name, score) {
-  const url = "https://script.google.com/macros/s/AKfycbwzku-lROnpyezMIJXJ8EncjcxvKCS4-pM1GEQTRA-aBsBQ5edIz_22vf7dAh_HEKSU/exec";
+  const url = "https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
 
   fetch(url, {
     method: "POST",
@@ -246,6 +339,46 @@ function saveScoreToSheet(name, score) {
   .then(data => console.log("Saved:", data))
   .catch(err => console.error("Error:", err));
 }
+
+
+function loadDashboard(name){
+  const url = "https://venkatruth.github.io/math-learning-app/";
+
+  fetch(url)
+    .then(res => res.json())
+    .then(data => {
+
+      let userData = data.filter(d => d.name === name);
+
+      if(userData.length === 0) return;
+
+      // ✅ BEST SCORE
+      let best = Math.max(...userData.map(x => x.score));
+      document.getElementById("bestScore").innerText =
+        "🏆 Best Score: " + best + "/10";
+
+      // ✅ HISTORY TABLE
+      let table = document.getElementById("historyTable");
+      table.innerHTML = "";
+
+      userData.reverse().forEach(d => {
+        let tr = document.createElement("tr");
+
+        let date = new Date(d.date).toLocaleDateString();
+
+        tr.innerHTML = `
+          <td>${date}</td>
+          <td>${d.score}/10</td>
+        `;
+
+        table.appendChild(tr);
+      });
+
+      document.getElementById("dashboard").style.display = "block";
+    })
+    .catch(err => console.error(err));
+}
+
 
 </script>
 
