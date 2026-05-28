@@ -217,12 +217,34 @@ function stars(s){
 }
 
 // ✅ FINISH
+
 function finish(){
  document.getElementById("quiz").style.display="none";
  document.getElementById("resultBox").style.display="block";
 
  document.getElementById("result").innerText=currentUser+" scored "+score+"/10";
  document.getElementById("stars").innerText=stars(score);
+
+ // ✅ SAVE TO GOOGLE SHEET
+ saveScoreToSheet(currentUser, score);
+}
+
+function saveScoreToSheet(name, score) {
+  const url = "https://script.google.com/macros/s/AKfycbwzku-lROnpyezMIJXJ8EncjcxvKCS4-pM1GEQTRA-aBsBQ5edIz_22vf7dAh_HEKSU/exec";
+
+  fetch(url, {
+    method: "POST",
+    body: JSON.stringify({
+      name: name,
+      score: score
+    }),
+    headers: {
+      "Content-Type": "application/json"
+    }
+  })
+  .then(res => res.json())
+  .then(data => console.log("Saved:", data))
+  .catch(err => console.error("Error:", err));
 }
 
 </script>
