@@ -4,6 +4,10 @@
 <title>Math Learning App</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+
 <style>
 body {
   font-family: Arial;
@@ -15,6 +19,9 @@ body {
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2c3e50">
 
 
 /* ✅ APP CARD */
@@ -78,7 +85,7 @@ Math Learning App
 </select><br><br>
 
 <input type="text" id="newStudent" placeholder="Add New Name"><br><br>
-<button onclick="startApp()">Start</button>
+<button onclick="startApp(); enableFullscreen();">Start</button>
 
 <div id="menu" style="display:none;">
 <button onclick="startQuiz('easy')">Easy</button>
@@ -136,6 +143,12 @@ Math Learning App
 
 <script>
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("service-worker.js")
+    .then(() => console.log("✅ Service Worker registered"));
+}
+
+
 let currentUser="", questions=[], index=0, score=0;
 let selectedLevel="";
 
@@ -148,6 +161,23 @@ let correctSound = new Audio("https://www.soundjay.com/buttons/sounds/button-09.
 let wrongSound = new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3");
 
 function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+
+
+// ✅ FULLSCREEN
+function enableFullscreen() {
+  let elem = document.documentElement;
+
+  if (elem.requestFullscreen) {
+    elem.requestFullscreen();
+  } else if (elem.webkitRequestFullscreen) {
+    elem.webkitRequestFullscreen();
+  } else if (elem.msRequestFullscreen) {
+    elem.msRequestFullscreen();
+  }
+}
+
+
 
 // ✅ CONFETTI
 function showConfetti(){
