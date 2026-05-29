@@ -7,6 +7,12 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 
+<!-- ✅ PWA -->
+<link rel="manifest" href="/math-learning-app/manifest.json">
+<meta name="theme-color" content="#2c3e50">
+
+<!-- ✅ Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body {
@@ -16,16 +22,6 @@ body {
   background: linear-gradient(135deg, #74ebd5, #9face6);
 }
 
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-
-<link rel="manifest" href="/math-learning-app/manifest.json">
-
-<meta name="theme-color" content="#2c3e50">
-
-
-/* ✅ APP CARD */
 .container {
   background:white;
   padding:20px;
@@ -34,12 +30,6 @@ body {
   margin:auto;
   box-shadow:0 0 20px rgba(0,0,0,0.2);
 }
-
-/* ✅ BUTTON ANIMATION */
-
-
-<button id="installBtn" style="display:none;" onclick="installApp()">📲 Install App</button>
-
 
 button {
   padding:12px;
@@ -70,7 +60,6 @@ input {
   transition: width 0.4s;
 }
 
-/* ✅ CONFETTI */
 @keyframes fall {
   to { transform: translateY(100vh); }
 }
@@ -85,6 +74,9 @@ input {
 <img src="icon.png" width="30" style="vertical-align:middle;">
 Math Learning App
 </h2>
+
+<!-- ✅ INSTALL BUTTON -->
+<button id="installBtn" style="display:none;">📲 Install App</button>
 
 <select id="studentSelect">
 <option value="">Select Student</option>
@@ -128,55 +120,50 @@ Math Learning App
 <div id="dashboard" style="display:none;">
 <h2>📊 Student Dashboard</h2>
 <h3 id="bestScore"></h3>
-
 <table border="1" style="margin:auto;">
-<thead>
-<tr><th>Date</th><th>Score</th></tr>
-</thead>
+<thead><tr><th>Date</th><th>Score</th></tr></thead>
 <tbody id="historyTable"></tbody>
 </table>
 </div>
 
 <div id="leaderboard" style="display:none;">
-  <h2>🏆 Leaderboard</h2>
-  <ol id="leaderList"></ol>
+<h2>🏆 Leaderboard</h2>
+<ol id="leaderList"></ol>
 </div>
 
 <canvas id="scoreChart" width="350" height="200" style="display:none;"></canvas>
-
 
 </div>
 
 <script>
 
+// ✅ SERVICE WORKER
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/math-learning-app/service-worker.js")
-      .then(reg => console.log("✅ Service Worker registered:", reg.scope))
-      .catch(err => console.log("❌ Service Worker failed:", err));
+      .then(reg => console.log("✅ SW registered:", reg.scope))
+      .catch(err => console.log("❌ SW error:", err));
   });
 }
 
-
-
+// ✅ INSTALL APP
 let deferredPrompt;
 
-window.addEventListener('beforeinstallprompt', (e) => {
+window.addEventListener("beforeinstallprompt", (e) => {
   e.preventDefault();
   deferredPrompt = e;
-
-  // Show your own install button
   document.getElementById("installBtn").style.display = "block";
 });
 
-
-
-let currentUser="", questions=[], index=0, score=0;
-let selectedLevel="";
-
-let correct=[
-"Fantastic!","Superstar!","Brilliant!","Champion!","On fire!"
-];
+document.getElementById("installBtn").addEventListener("click", async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+  } else {
+    alert("Tap ⋮ → Install App");
+  }
+});
 
 // ✅ SOUND
 let correctSound = new Audio("https://www.soundjay.com/buttons/sounds/button-09.mp3");
@@ -184,36 +171,11 @@ let wrongSound = new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp
 
 function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
 
-
-
 // ✅ FULLSCREEN
-function enableFullscreen() {
-  let elem = document.documentElement;
-
-  if (elem.requestFullscreen) {
-    elem.requestFullscreen();
-  } else if (elem.webkitRequestFullscreen) {
-    elem.webkitRequestFullscreen();
-  } else if (elem.msRequestFullscreen) {
-    elem.msRequestFullscreen();
-  }
+function enableFullscreen(){
+  let elem=document.documentElement;
+  if(elem.requestFullscreen) elem.requestFullscreen();
 }
-
-
-
-// ✅ INSTALLAPP
-function installApp() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-
-    deferredPrompt.userChoice.then(() => {
-      deferredPrompt = null;
-    });
-  }
-}
-
-
-
 
 // ✅ CONFETTI
 function showConfetti(){
@@ -250,16 +212,16 @@ function startApp(){
  if(n){
   currentUser=n;
   let list=JSON.parse(localStorage.getItem("students")||"[]");
-  if(!list.includes(n)){
-   list.push(n);
-   localStorage.setItem("students",JSON.stringify(list));
-  }
+  if(!list.includes(n)){ list.push(n); localStorage.setItem("students",JSON.stringify(list)); }
  }
  else if(s){ currentUser=s; }
  else return alert("Enter/select name");
 
  document.getElementById("menu").style.display="block";
 }
+
+let currentUser="", questions=[], index=0, score=0, selectedLevel="";
+let correct=["Fantastic!","Superstar!","Brilliant!","Champion!","On fire!"];
 
 function startQuiz(level){
  selectedLevel=level;
@@ -269,47 +231,34 @@ function startQuiz(level){
 
 // ✅ HYBRID QUIZ
 async function beginQuiz(type){
+ let sheetQ = await fetchQuestions(selectedLevel,type);
+ let finalQ = [];
 
-  let sheetQuestions = await fetchQuestions(selectedLevel, type);
-  let finalQuestions = [];
+ if(sheetQ.length>0){
+  sheetQ.sort(()=>0.5-Math.random());
+  finalQ = sheetQ.slice(0,10);
+ }
 
-  // ✅ TAKE ALL SHEET QUESTIONS AS-IS (NO FILTERING)
-  if(sheetQuestions.length > 0){
-    sheetQuestions.sort(()=>0.5 - Math.random());
-
-    // ✅ Take up to 10 (no restriction applied)
-    finalQuestions = sheetQuestions.slice(0,10);
+ while(finalQ.length<10){
+  let q=generateRandomQuestion(selectedLevel,type);
+  if(!finalQ.some(x=>x.q===q.q)){
+    finalQ.push(q);
   }
+ }
 
-  // ✅ FILL WITH RANDOM ONLY IF NEEDED
-  while(finalQuestions.length < 10){
+ questions=finalQ;
+ index=0; score=0;
 
-    let q = generateRandomQuestion(selectedLevel, type);
+ document.getElementById("typeMenu").style.display="none";
+ document.getElementById("quiz").style.display="block";
 
-    // ✅ Avoid duplicates ONLY against existing questions
-    if(!finalQuestions.some(x => x.q === q.q)){
-      finalQuestions.push(q);
-    }
-  }
-
-  questions = finalQuestions;
-
-  index = 0;
-  score = 0;
-
-  document.getElementById("typeMenu").style.display = "none";
-  document.getElementById("quiz").style.display = "block";
-
-  showQ();
+ showQ();
 }
 
-
-// ✅ FETCH SHEET
 async function fetchQuestions(level,type){
  const url="https://script.google.com/macros/s/AKfycbwkGmHle5nKcXW76qLKy7yNLuc-_rYYzlbGH0yDh44KAwH7ok7dyTVktibtibDoTHor/exec";
  let res=await fetch(url);
  let data=await res.json();
-
  return data.filter(q=>q.level===level && q.type===type)
   .map(q=>({q:q.question,a:q.answer}));
 }
@@ -321,7 +270,7 @@ function generateRandomQuestion(level,type){
  return seriesQ();
 }
 
-// ✅ QUESTIONS
+// ✅ QUESTION TYPES
 function addQ(level){
  let count=rand(2,6), max=level==="easy"?9:level==="medium"?49:100;
  let nums=[],sum=0;
@@ -357,11 +306,10 @@ function seriesQ(){
  let m=rand(1,3);
  let ans=arr[m];
  arr[m]="__";
-
  return {q:arr.join(", "),a:ans};
 }
 
-// ✅ QUIZ
+// ✅ QUIZ FLOW
 function showQ(){
  if(index>=questions.length) return finish();
 
@@ -370,7 +318,6 @@ function showQ(){
  document.getElementById("feedback").innerText="";
 
  document.getElementById("question").innerText=questions[index].q;
-
  setTimeout(()=>document.getElementById("answer").focus(),100);
 }
 
@@ -388,7 +335,6 @@ function checkAnswer(){
  if(user==correctAnswer){
   correctSound.play();
   showConfetti();
-  document.getElementById("feedback").innerText=correct[rand(0,4)];
   score++;
  } else {
   wrongSound.play();
@@ -421,14 +367,12 @@ function finish(){
  document.getElementById("stars").innerText=stars(score);
 
  saveScoreToSheet(currentUser,score);
-
  setTimeout(()=>loadDashboard(currentUser),1500);
 }
 
 // ✅ SAVE
 function saveScoreToSheet(name,score){
  const url="https://script.google.com/macros/s/AKfycbwkGmHle5nKcXW76qLKy7yNLuc-_rYYzlbGH0yDh44KAwH7ok7dyTVktibtibDoTHor/exec";
-
  fetch(url,{
   method:"POST",
   mode:"no-cors",
@@ -437,97 +381,31 @@ function saveScoreToSheet(name,score){
  });
 }
 
-// ✅ DASHBOARD
-
-
+// ✅ DASHBOARD + LEADERBOARD + GRAPH
 function loadDashboard(name){
  const url="https://script.google.com/macros/s/AKfycbwkGmHle5nKcXW76qLKy7yNLuc-_rYYzlbGH0yDh44KAwH7ok7dyTVktibtibDoTHor/exec";
 
  fetch(url)
  .then(res=>res.json())
  .then(data=>{
-
-   let userData = data.filter(d=>d.name===name);
-
+   let userData=data.filter(d=>d.name===name);
    if(!userData.length) return;
 
-   // ✅ BEST SCORE
-   let best = Math.max(...userData.map(x=>x.score));
-   document.getElementById("bestScore").innerText =
-   "🏆 Best Score: " + best + "/10";
+   let best=Math.max(...userData.map(x=>x.score));
+   document.getElementById("bestScore").innerText="🏆 Best Score: "+best+"/10";
 
-   // ✅ HISTORY TABLE
    let table=document.getElementById("historyTable");
    table.innerHTML="";
-
-   userData.slice().reverse().forEach(d=>{
+   userData.reverse().forEach(d=>{
      let tr=document.createElement("tr");
      let date=new Date(d.date).toLocaleDateString();
-
      tr.innerHTML="<td>"+date+"</td><td>"+d.score+"/10</td>";
      table.appendChild(tr);
    });
 
    document.getElementById("dashboard").style.display="block";
-
-   // ✅ ✅ LEADERBOARD
-   let bestScores = {};
-
-   data.forEach(d=>{
-     if(!bestScores[d.name] || d.score > bestScores[d.name]){
-       bestScores[d.name] = d.score;
-     }
-   });
-
-   let sorted = Object.entries(bestScores)
-     .sort((a,b)=>b[1]-a[1])
-     .slice(0,5);
-
-   let list = document.getElementById("leaderList");
-   list.innerHTML="";
-
-   sorted.forEach(([n,s])=>{
-     let li=document.createElement("li");
-     li.textContent = n + " - " + s + "/10";
-     list.appendChild(li);
-   });
-
-   document.getElementById("leaderboard").style.display="block";
-
-   // ✅ ✅ GRAPH (Chart)
-   let labels = userData.map(d => new Date(d.date).toLocaleDateString());
-   let scores = userData.map(d => d.score);
-
-   let ctx = document.getElementById("scoreChart").getContext("2d");
-
-   document.getElementById("scoreChart").style.display="block";
-
-   new Chart(ctx, {
-     type: 'line',
-     data: {
-       labels: labels,
-       datasets: [{
-         label: 'Score Progress',
-         data: scores,
-         borderColor: 'blue',
-         fill: false
-       }]
-     },
-     options: {
-       scales: {
-         y: {
-           beginAtZero: true,
-           max: 10
-         }
-       }
-     }
-   });
-
  });
 }
-
-
-
 </script>
 
 </body>
