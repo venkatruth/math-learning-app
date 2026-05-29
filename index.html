@@ -240,7 +240,7 @@ async function beginQuiz(type){
 
 // ✅ FETCH SHEET
 async function fetchQuestions(level,type){
- const url="https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
+ const url="https://script.google.com/macros/s/AKfycbwkGmHle5nKcXW76qLKy7yNLuc-_rYYzlbGH0yDh44KAwH7ok7dyTVktibtibDoTHor/exec";
  let res=await fetch(url);
  let data=await res.json();
 
@@ -361,7 +361,7 @@ function finish(){
 
 // ✅ SAVE
 function saveScoreToSheet(name,score){
- const url="https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
+ const url="https://script.google.com/macros/s/AKfycbwkGmHle5nKcXW76qLKy7yNLuc-_rYYzlbGH0yDh44KAwH7ok7dyTVktibtibDoTHor/exec";
 
  fetch(url,{
   method:"POST",
@@ -375,7 +375,7 @@ function saveScoreToSheet(name,score){
 
 
 function loadDashboard(name){
- const url="https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
+ const url="https://script.google.com/macros/s/AKfycbwkGmHle5nKcXW76qLKy7yNLuc-_rYYzlbGH0yDh44KAwH7ok7dyTVktibtibDoTHor/exec";
 
  fetch(url)
  .then(res=>res.json())
