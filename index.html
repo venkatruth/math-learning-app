@@ -35,6 +35,11 @@ body {
 }
 
 /* ✅ BUTTON ANIMATION */
+
+
+<button id="installBtn" style="display:none;" onclick="installApp()">📲 Install App</button>
+
+
 button {
   padding:12px;
   margin:8px;
@@ -149,6 +154,19 @@ if ("serviceWorker" in navigator) {
 }
 
 
+
+let deferredPrompt;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+
+  // Show your own install button
+  document.getElementById("installBtn").style.display = "block";
+});
+
+
+
 let currentUser="", questions=[], index=0, score=0;
 let selectedLevel="";
 
@@ -176,6 +194,20 @@ function enableFullscreen() {
     elem.msRequestFullscreen();
   }
 }
+
+
+
+// ✅ INSTALLAPP
+function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+
+    deferredPrompt.userChoice.then(() => {
+      deferredPrompt = null;
+    });
+  }
+}
+
 
 
 
