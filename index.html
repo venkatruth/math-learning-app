@@ -1,43 +1,76 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Math Learning App</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Math Learning App</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <style>
-    body { font-family: Arial; text-align:center; padding:20px; }
+<style>
+body {
+  font-family: Arial;
+  text-align:center;
+  padding:20px;
+  background: linear-gradient(135deg, #74ebd5, #9face6);
+}
 
-    button {
-      padding:12px;
-      margin:8px;
-      width:220px;
-      font-size:16px;
-      border-radius:10px;
-    }
 
-    input {
-      padding:10px;
-      font-size:16px;
-      width:150px;
-      text-align:center;
-    }
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    #progressBar {
-      height:20px;
-      width:0%;
-      background:green;
-      border-radius:10px;
-      transition: width 0.4s;
-    }
-  </style>
+
+
+/* ✅ APP CARD */
+.container {
+  background:white;
+  padding:20px;
+  border-radius:20px;
+  max-width:420px;
+  margin:auto;
+  box-shadow:0 0 20px rgba(0,0,0,0.2);
+}
+
+/* ✅ BUTTON ANIMATION */
+button {
+  padding:12px;
+  margin:8px;
+  width:220px;
+  font-size:16px;
+  border-radius:10px;
+  transition: transform 0.2s, background 0.2s;
+}
+
+button:active {
+  transform: scale(0.95);
+  background:#4CAF50;
+}
+
+input {
+  padding:10px;
+  font-size:16px;
+  width:150px;
+  text-align:center;
+}
+
+#progressBar {
+  height:20px;
+  width:0%;
+  background:green;
+  border-radius:10px;
+  transition: width 0.4s;
+}
+
+/* ✅ CONFETTI */
+@keyframes fall {
+  to { transform: translateY(100vh); }
+}
+</style>
 </head>
 
 <body>
 
+<div class="container">
 
 <h2>
-  <img src="icon.png" width="30" style="vertical-align:middle;">
-  Math Learning App
+<img src="icon.png" width="30" style="vertical-align:middle;">
+Math Learning App
 </h2>
 
 <select id="studentSelect">
@@ -91,14 +124,46 @@
 </table>
 </div>
 
+<div id="leaderboard" style="display:none;">
+  <h2>🏆 Leaderboard</h2>
+  <ol id="leaderList"></ol>
+</div>
+
+<canvas id="scoreChart" width="350" height="200" style="display:none;"></canvas>
+
+
+</div>
+
 <script>
 
 let currentUser="", questions=[], index=0, score=0;
 let selectedLevel="";
 
-let correct=["Fantastic!","Superstar!","Brilliant!","Champion!","On fire!"];
+let correct=[
+"Fantastic!","Superstar!","Brilliant!","Champion!","On fire!"
+];
+
+// ✅ SOUND
+let correctSound = new Audio("https://www.soundjay.com/buttons/sounds/button-09.mp3");
+let wrongSound = new Audio("https://www.soundjay.com/buttons/sounds/button-10.mp3");
 
 function rand(a,b){ return Math.floor(Math.random()*(b-a+1))+a; }
+
+// ✅ CONFETTI
+function showConfetti(){
+ for(let i=0;i<25;i++){
+  let d=document.createElement("div");
+  d.style.position="fixed";
+  d.style.width="6px";
+  d.style.height="6px";
+  d.style.background="red";
+  d.style.top="0px";
+  d.style.left=Math.random()*window.innerWidth+"px";
+  d.style.animation="fall 1.5s linear";
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),1500);
+ }
+}
 
 // ✅ STUDENTS
 function loadStudents(){
@@ -120,8 +185,8 @@ function startApp(){
   currentUser=n;
   let list=JSON.parse(localStorage.getItem("students")||"[]");
   if(!list.includes(n)){
-    list.push(n);
-    localStorage.setItem("students",JSON.stringify(list));
+   list.push(n);
+   localStorage.setItem("students",JSON.stringify(list));
   }
  }
  else if(s){ currentUser=s; }
@@ -130,84 +195,104 @@ function startApp(){
  document.getElementById("menu").style.display="block";
 }
 
-// ✅ FLOW
 function startQuiz(level){
  selectedLevel=level;
  document.getElementById("menu").style.display="none";
  document.getElementById("typeMenu").style.display="block";
 }
 
-function beginQuiz(type){
- questions=generateQuestions(selectedLevel,type);
- index=0; score=0;
+// ✅ HYBRID QUIZ
+async function beginQuiz(type){
 
- document.getElementById("typeMenu").style.display="none";
- document.getElementById("quiz").style.display="block";
- showQ();
+  let sheetQuestions = await fetchQuestions(selectedLevel, type);
+  let finalQuestions = [];
+
+  // ✅ TAKE ALL SHEET QUESTIONS AS-IS (NO FILTERING)
+  if(sheetQuestions.length > 0){
+    sheetQuestions.sort(()=>0.5 - Math.random());
+
+    // ✅ Take up to 10 (no restriction applied)
+    finalQuestions = sheetQuestions.slice(0,10);
+  }
+
+  // ✅ FILL WITH RANDOM ONLY IF NEEDED
+  while(finalQuestions.length < 10){
+
+    let q = generateRandomQuestion(selectedLevel, type);
+
+    // ✅ Avoid duplicates ONLY against existing questions
+    if(!finalQuestions.some(x => x.q === q.q)){
+      finalQuestions.push(q);
+    }
+  }
+
+  questions = finalQuestions;
+
+  index = 0;
+  score = 0;
+
+  document.getElementById("typeMenu").style.display = "none";
+  document.getElementById("quiz").style.display = "block";
+
+  showQ();
+}
+
+
+// ✅ FETCH SHEET
+async function fetchQuestions(level,type){
+ const url="https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
+ let res=await fetch(url);
+ let data=await res.json();
+
+ return data.filter(q=>q.level===level && q.type===type)
+  .map(q=>({q:q.question,a:q.answer}));
+}
+
+function generateRandomQuestion(level,type){
+ if(type==="add") return addQ(level);
+ if(type==="sub") return subQ(level);
+ if(type==="mul") return mulQ(level);
+ return seriesQ();
 }
 
 // ✅ QUESTIONS
 function addQ(level){
- let count=rand(2,6);
- let max=9;
- if(level==="medium") max=49;
- if(level==="hard") max=100;
-
- let nums=[], sum=0;
- for(let i=0;i<count;i++){
-  let n=rand(0,max);
-  nums.push(n);
-  sum+=n;
- }
+ let count=rand(2,6), max=level==="easy"?9:level==="medium"?49:100;
+ let nums=[],sum=0;
+ for(let i=0;i<count;i++){let n=rand(0,max); nums.push(n); sum+=n;}
  return {q:nums.join(" + ")+" = ?",a:sum};
 }
 
 function subQ(level){
- let max=9;
- if(level==="medium") max=49;
- if(level==="hard") max=100;
-
- let a=rand(0,max);
- let b=rand(0,a);
+ let max=level==="easy"?9:level==="medium"?49:100;
+ let a=rand(0,max), b=rand(0,a);
  return {q:a+" - "+b+" = ?",a:a-b};
 }
 
 function mulQ(level){
- let count=rand(2,3);
- let max=9;
- if(level==="medium") max=12;
- if(level==="hard") max=20;
-
+ let count=rand(2,3), max=level==="easy"?9:level==="medium"?12:20;
  let nums=[];
  for(let i=0;i<count;i++) nums.push(rand(1,max));
-
  return {q:nums.join(" × "),a:nums.reduce((x,y)=>x*y)};
 }
 
 function seriesQ(){
  let steps=[1,2,3,-1,-2,-3];
  let step=steps[rand(0,5)];
- let start=rand(0,30);
+ let start=rand(5,50);
 
  let arr=[];
- for(let i=0;i<5;i++) arr.push(start+i*step);
+ for(let i=0;i<5;i++){
+  let v=start+i*step;
+  if(v<1) return seriesQ();
+  arr.push(v);
+ }
 
  let m=rand(1,3);
  let ans=arr[m];
  arr[m]="__";
 
- return {q:arr.join(","),a:ans};
-}
-
-function generateQuestions(level,type){
- let arr=[];
- for(let i=0;i<10;i++){
-  if(type==="add") arr.push(addQ(level));
-  else if(type==="sub") arr.push(subQ(level));
-  else if(type==="mul") arr.push(mulQ(level));
-  else arr.push(seriesQ());
- }
- return arr;
+ return {q:arr.join(", "),a:ans};
 }
 
 // ✅ QUIZ
@@ -216,22 +301,31 @@ function showQ(){
 
  document.getElementById("answer").value="";
  document.getElementById("submitBtn").disabled=true;
+ document.getElementById("feedback").innerText="";
+
  document.getElementById("question").innerText=questions[index].q;
+
+ setTimeout(()=>document.getElementById("answer").focus(),100);
 }
 
 function enableBtn(){
- document.getElementById("submitBtn").disabled=
- document.getElementById("answer").value.trim()==="";
+ let v=document.getElementById("answer").value.trim();
+ document.getElementById("submitBtn").disabled=(v===""||isNaN(v));
 }
 
 function checkAnswer(){
- let user=document.getElementById("answer").value;
+ let user=document.getElementById("answer").value.trim();
+ if(user===""||isNaN(user)) return;
+
  let correctAnswer=questions[index].a;
 
  if(user==correctAnswer){
+  correctSound.play();
+  showConfetti();
   document.getElementById("feedback").innerText=correct[rand(0,4)];
   score++;
  } else {
+  wrongSound.play();
   document.getElementById("feedback").innerText="Answer: "+correctAnswer;
  }
 
@@ -265,43 +359,42 @@ function finish(){
  setTimeout(()=>loadDashboard(currentUser),1500);
 }
 
+// ✅ SAVE
+function saveScoreToSheet(name,score){
+ const url="https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
 
-// ✅ GOOGLE SHEET (FIXED)
-
-function saveScoreToSheet(name, score) {
- const url = "https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
-
- fetch(url, {
-   method: "POST",
-   mode: "no-cors",   // ✅ REQUIRED
-   body: JSON.stringify({
-     name: name,
-     score: score
-   }),
-   headers: {
-     "Content-Type": "application/json"
-   }
+ fetch(url,{
+  method:"POST",
+  mode:"no-cors",
+  body:JSON.stringify({name,score}),
+  headers:{"Content-Type":"application/json"}
  });
 }
 
+// ✅ DASHBOARD
+
 
 function loadDashboard(name){
- const url = "https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
+ const url="https://script.google.com/macros/s/AKfycbyqAuaEKIzvrKwx--SkmyXdUYffz3vs1Lh8T3SPyp0Yq1QiSI0zPq7hq-NmJE75cPUL/exec";
 
  fetch(url)
  .then(res=>res.json())
  .then(data=>{
-   let userData=data.filter(d=>d.name===name);
-   if(userData.length===0) return;
 
-   let best=Math.max(...userData.map(x=>x.score));
-   document.getElementById("bestScore").innerText=
-   "🏆 Best Score: "+best+"/10";
+   let userData = data.filter(d=>d.name===name);
 
+   if(!userData.length) return;
+
+   // ✅ BEST SCORE
+   let best = Math.max(...userData.map(x=>x.score));
+   document.getElementById("bestScore").innerText =
+   "🏆 Best Score: " + best + "/10";
+
+   // ✅ HISTORY TABLE
    let table=document.getElementById("historyTable");
    table.innerHTML="";
 
-   userData.reverse().forEach(d=>{
+   userData.slice().reverse().forEach(d=>{
      let tr=document.createElement("tr");
      let date=new Date(d.date).toLocaleDateString();
 
@@ -310,8 +403,64 @@ function loadDashboard(name){
    });
 
    document.getElementById("dashboard").style.display="block";
+
+   // ✅ ✅ LEADERBOARD
+   let bestScores = {};
+
+   data.forEach(d=>{
+     if(!bestScores[d.name] || d.score > bestScores[d.name]){
+       bestScores[d.name] = d.score;
+     }
+   });
+
+   let sorted = Object.entries(bestScores)
+     .sort((a,b)=>b[1]-a[1])
+     .slice(0,5);
+
+   let list = document.getElementById("leaderList");
+   list.innerHTML="";
+
+   sorted.forEach(([n,s])=>{
+     let li=document.createElement("li");
+     li.textContent = n + " - " + s + "/10";
+     list.appendChild(li);
+   });
+
+   document.getElementById("leaderboard").style.display="block";
+
+   // ✅ ✅ GRAPH (Chart)
+   let labels = userData.map(d => new Date(d.date).toLocaleDateString());
+   let scores = userData.map(d => d.score);
+
+   let ctx = document.getElementById("scoreChart").getContext("2d");
+
+   document.getElementById("scoreChart").style.display="block";
+
+   new Chart(ctx, {
+     type: 'line',
+     data: {
+       labels: labels,
+       datasets: [{
+         label: 'Score Progress',
+         data: scores,
+         borderColor: 'blue',
+         fill: false
+       }]
+     },
+     options: {
+       scales: {
+         y: {
+           beginAtZero: true,
+           max: 10
+         }
+       }
+     }
+   });
+
  });
 }
+
+
 
 </script>
 
