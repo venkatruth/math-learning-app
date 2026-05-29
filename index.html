@@ -20,7 +20,8 @@ body {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="/math-learning-app/manifest.json">
+
 <meta name="theme-color" content="#2c3e50">
 
 
@@ -149,8 +150,11 @@ Math Learning App
 <script>
 
 if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js")
-    .then(() => console.log("✅ Service Worker registered"));
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/math-learning-app/service-worker.js")
+      .then(reg => console.log("✅ Service Worker registered:", reg.scope))
+      .catch(err => console.log("❌ Service Worker failed:", err));
+  });
 }
 
 
