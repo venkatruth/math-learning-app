@@ -99,6 +99,7 @@ function renderSeriesInputs(question){
 
       let input = document.createElement("input");
       input.type = "number";
+	input.className = "seriesInput";
       input.style.width = "50px";
       input.style.margin = "5px";
 
@@ -112,7 +113,11 @@ function renderSeriesInputs(question){
     }
 
   });
+
+
+document.getElementById("submitBtn").disabled = false;
 }
+
 
 
 // ✅ CHECK ANSWER
