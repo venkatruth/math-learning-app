@@ -49,30 +49,36 @@ let score = 0;
 
 // ✅ SHOW QUESTION
 function showQ(){
-  if(index >= questions.length) return;
+
+  if(index >= questions.length) return finish();
+
+  document.getElementById("submitBtn").disabled = true;
+  document.getElementById("feedback").innerText = "";
 
   let q = questions[index].q;
-
   let questionElem = document.getElementById("question");
   let container = document.getElementById("answerContainer");
 
   container.innerHTML = "";
 
-  // ✅ SERIES QUESTION
-  if(q.includes("__")){
+  // ✅ SERIES (multiple inputs)
+  if (q.includes("__")) {
 
-    questionElem.innerText = "";
-
+    questionElem.innerText = "";   // ✅ keep blank
     renderSeriesInputs(q);
 
   } else {
 
+    // ✅ NORMAL QUESTION
     questionElem.innerText = q;
 
     container.innerHTML =
-      '<input id="answer" onkeypress="if(event.key===\'Enter\') checkAnswer()">';
+      '<input id="answer" oninput="enableBtn()" onkeypress="if(event.key===\'Enter\') checkAnswer()">';
 
-    setTimeout(()=>document.getElementById("answer").focus(),100);
+    setTimeout(()=>{
+      let inp = document.getElementById("answer");
+      if(inp) inp.focus();   // ✅ safe focus
+    },100);
   }
 }
 
