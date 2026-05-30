@@ -62,7 +62,7 @@ function showQ(){
   container.innerHTML = "";
 
   // ✅ SERIES (multiple inputs)
-  if (q.includes("__")) {
+  if (q.includes("_")) {
 
     questionElem.innerText = "";   // ✅ keep blank
     renderSeriesInputs(q);
@@ -90,7 +90,7 @@ function renderSeriesInputs(question){
 
   parts.forEach(p => {
 
-    if(p.trim() === "__"){
+    if (p.trim() === "_" || p.trim() === "__"){
 
       let input = document.createElement("input");
       input.type = "number";
