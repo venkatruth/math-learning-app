@@ -56,20 +56,22 @@ function showQ(){
   document.getElementById("feedback").innerText = "";
 
   let q = questions[index].q;
+
   let questionElem = document.getElementById("question");
   let container = document.getElementById("answerContainer");
 
   container.innerHTML = "";
 
-  // ✅ SERIES (multiple inputs)
+  // ✅ SERIES (multiple blanks)
   if (q.includes("_")) {
 
-    questionElem.innerText = "";   // ✅ keep blank
+    questionElem.innerText = "";
+
     renderSeriesInputs(q);
 
   } else {
 
-    // ✅ NORMAL QUESTION
+    // ✅ NORMAL
     questionElem.innerText = q;
 
     container.innerHTML =
@@ -77,24 +79,28 @@ function showQ(){
 
     setTimeout(()=>{
       let inp = document.getElementById("answer");
-      if(inp) inp.focus();   // ✅ safe focus
+      if(inp) inp.focus();
     },100);
   }
 }
+
 
 // ✅ RENDER SERIES INPUTS
 function renderSeriesInputs(question){
 
   const container = document.getElementById("answerContainer");
+  container.innerHTML = "";
+
   const parts = question.split(",");
 
   parts.forEach(p => {
 
-    if (p.trim() === "_" || p.trim() === "__"){
+    if (p.trim() === "_" || p.trim() === "__") {
 
       let input = document.createElement("input");
       input.type = "number";
-      input.className = "seriesInput";
+      input.style.width = "50px";
+      input.style.margin = "5px";
 
       container.appendChild(input);
 
@@ -104,8 +110,10 @@ function renderSeriesInputs(question){
       span.innerText = p.trim() + " ";
       container.appendChild(span);
     }
+
   });
 }
+
 
 // ✅ CHECK ANSWER
 function checkAnswer(){
