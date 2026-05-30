@@ -7,13 +7,19 @@
 <style>
 body {
   font-family: Arial;
-  text-align:center;
+  text-align: center;
 }
 
 input {
-  padding:10px;
-  font-size:16px;
-  margin:5px;
+  padding: 10px;
+  font-size: 16px;
+  margin: 5px;
+  width: 60px;
+  text-align: center;
+}
+
+.series-span {
+  margin: 5px;
 }
 </style>
 </head>
@@ -28,7 +34,6 @@ input {
 
   <div id="answerContainer"></div>
 
-  <!-- ✅ FIX: added id -->
   <button id="submitBtn" onclick="checkAnswer()">Submit</button>
 
   <p id="feedback"></p>
@@ -37,20 +42,20 @@ input {
 
 <script>
 
+// ✅ SAMPLE QUESTIONS
 let questions = [
-  { q: "5, __, __, 8, 9", a: [6,7] },   // ✅ series
-  { q: "3 + 5 = ?", a: 8 }              // ✅ normal
+  { q: "5, __, __, 8, 9", a: [6,7] },
+  { q: "3 + 5 = ?", a: 8 }
 ];
 
 let index = 0;
-let score = 0;
 
 // ✅ SHOW QUESTION
 function showQ(){
 
-  // ✅ FIX: prevent crash
   if(index >= questions.length){
     document.getElementById("question").innerText = "Quiz finished!";
+    document.getElementById("answerContainer").innerHTML = "";
     return;
   }
 
@@ -63,16 +68,16 @@ function showQ(){
 
   container.innerHTML = "";
 
-  // ✅ SERIES
-  if (q.includes("__")) {
+  // ✅ SERIES MODE
+  if(q.includes("__")){
 
     questionElem.innerText = "";
 
     renderSeriesInputs(q);
 
-  } else {
+  } 
+  else {
 
-    // ✅ NORMAL
     questionElem.innerText = q;
 
     container.innerHTML =
@@ -85,8 +90,7 @@ function showQ(){
   }
 }
 
-
-// ✅ RENDER SERIES INPUTS
+// ✅ SERIES RENDER
 function renderSeriesInputs(question){
 
   const container = document.getElementById("answerContainer");
@@ -94,21 +98,31 @@ function renderSeriesInputs(question){
 
   const parts = question.split(",");
 
-  parts.forEach(p => {
+  parts.forEach((p, i) => {
 
-    if (p.trim() === "__") {
+    let val = p.trim();
+
+    if(val === "__"){
 
       let input = document.createElement("input");
       input.type = "number";
       input.className = "seriesInput";
-      input.style.width = "60px";
 
       container.appendChild(input);
 
     } else {
 
       let span = document.createElement("span");
-      span.innerText = p.trim() + " ";
+
+      // ✅ keep commas correct
+      if(i < parts.length - 1){
+        span.innerText = val + ", ";
+      } else {
+        span.innerText = val;
+      }
+
+      span.className = "series-span";
+
       container.appendChild(span);
     }
 
@@ -116,43 +130,41 @@ function renderSeriesInputs(question){
 
 }
 
-
 // ✅ CHECK ANSWER
 function checkAnswer(){
 
   let correctAnswer = questions[index].a;
 
-  // ✅ MULTI
+  // ✅ MULTI ANSWER
   if(Array.isArray(correctAnswer)){
 
     let inputs = document.querySelectorAll(".seriesInput");
 
-    let userAnswers = Array.from(inputs).map(i => i.value);
+    let userAnswers = Array.from(inputs).map(i => i.value.trim());
 
     if(userAnswers.some(v => v === "")) return;
 
-    let isCorrect = correctAnswer.every((val,i) => Number(val) === Number(userAnswers[i]));
+    let isCorrect = correctAnswer.every((val,i)=> Number(val) === Number(userAnswers[i]));
 
     if(isCorrect){
-      document.getElementById("feedback").innerText="✅ Correct";
+      document.getElementById("feedback").innerText = "✅ Correct!";
     } else {
-      document.getElementById("feedback").innerText=
+      document.getElementById("feedback").innerText =
         "❌ Answer: " + correctAnswer.join(", ");
     }
-
   }
 
-  // ✅ SINGLE
+  // ✅ SINGLE ANSWER
   else {
 
-    let user = document.getElementById("answer").value;
+    let user = document.getElementById("answer").value.trim();
 
     if(user === "") return;
 
     if(Number(user) === Number(correctAnswer)){
-      document.getElementById("feedback").innerText="✅ Correct";
+      document.getElementById("feedback").innerText = "✅ Correct!";
     } else {
-      document.getElementById("feedback").innerText=
+      document.getElementById("feedback").innerText =
         "❌ Answer: " + correctAnswer;
     }
   }
