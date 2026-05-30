@@ -4,9 +4,6 @@
 <title>Math Learning App</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- ✅ Clean chart link -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
 body {
   font-family: Arial;
@@ -31,7 +28,8 @@ input {
 
   <div id="answerContainer"></div>
 
-  <button onclick="checkAnswer()">Submit</button>
+  <!-- ✅ FIX: added id -->
+  <button id="submitBtn" onclick="checkAnswer()">Submit</button>
 
   <p id="feedback"></p>
 
@@ -40,8 +38,8 @@ input {
 <script>
 
 let questions = [
-  { q: "5, __, __, 8, 9", a: [6,7] },   // ✅ test series
-  { q: "3 + 5 = ?", a: 8 }              // ✅ test normal
+  { q: "5, __, __, 8, 9", a: [6,7] },   // ✅ series
+  { q: "3 + 5 = ?", a: 8 }              // ✅ normal
 ];
 
 let index = 0;
@@ -50,9 +48,12 @@ let score = 0;
 // ✅ SHOW QUESTION
 function showQ(){
 
-  if(index >= questions.length) return finish();
+  // ✅ FIX: prevent crash
+  if(index >= questions.length){
+    document.getElementById("question").innerText = "Quiz finished!";
+    return;
+  }
 
-  document.getElementById("submitBtn").disabled = true;
   document.getElementById("feedback").innerText = "";
 
   let q = questions[index].q;
@@ -62,8 +63,8 @@ function showQ(){
 
   container.innerHTML = "";
 
-  // ✅ SERIES (multiple blanks)
-  if (q.includes("_")) {
+  // ✅ SERIES
+  if (q.includes("__")) {
 
     questionElem.innerText = "";
 
@@ -75,7 +76,7 @@ function showQ(){
     questionElem.innerText = q;
 
     container.innerHTML =
-      '<input id="answer" oninput="enableBtn()" onkeypress="if(event.key===\'Enter\') checkAnswer()">';
+      '<input id="answer" onkeypress="if(event.key===\'Enter\') checkAnswer()">';
 
     setTimeout(()=>{
       let inp = document.getElementById("answer");
@@ -95,13 +96,12 @@ function renderSeriesInputs(question){
 
   parts.forEach(p => {
 
-    if (p.trim() === "_" || p.trim() === "__") {
+    if (p.trim() === "__") {
 
       let input = document.createElement("input");
       input.type = "number";
-	input.className = "seriesInput";
-      input.style.width = "50px";
-      input.style.margin = "5px";
+      input.className = "seriesInput";
+      input.style.width = "60px";
 
       container.appendChild(input);
 
@@ -114,10 +114,7 @@ function renderSeriesInputs(question){
 
   });
 
-
-document.getElementById("submitBtn").disabled = false;
 }
-
 
 
 // ✅ CHECK ANSWER
@@ -125,7 +122,7 @@ function checkAnswer(){
 
   let correctAnswer = questions[index].a;
 
-  // ✅ MULTIPLE ANSWERS
+  // ✅ MULTI
   if(Array.isArray(correctAnswer)){
 
     let inputs = document.querySelectorAll(".seriesInput");
@@ -138,7 +135,6 @@ function checkAnswer(){
 
     if(isCorrect){
       document.getElementById("feedback").innerText="✅ Correct";
-      score++;
     } else {
       document.getElementById("feedback").innerText=
         "❌ Answer: " + correctAnswer.join(", ");
@@ -146,7 +142,7 @@ function checkAnswer(){
 
   }
 
-  // ✅ SINGLE ANSWER
+  // ✅ SINGLE
   else {
 
     let user = document.getElementById("answer").value;
@@ -155,7 +151,6 @@ function checkAnswer(){
 
     if(Number(user) === Number(correctAnswer)){
       document.getElementById("feedback").innerText="✅ Correct";
-      score++;
     } else {
       document.getElementById("feedback").innerText=
         "❌ Answer: " + correctAnswer;
