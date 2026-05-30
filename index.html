@@ -321,7 +321,26 @@ function showQ(){
  document.getElementById("submitBtn").disabled=true;
  document.getElementById("feedback").innerText="";
 
- document.getElementById("question").innerText=questions[index].q;
+let questionElem = document.getElementById("question");
+let container = document.getElementById("answerContainer");
+
+container.innerHTML = "";
+
+// ✅ If series → render everything inside container
+if (q.includes("__")) {
+
+  questionElem.innerText = "";   // ✅ IMPORTANT (clear header)
+
+  renderSeriesInputs(q);         // ✅ uses your function
+
+} else {
+
+  questionElem.innerText = q;
+
+  container.innerHTML =
+    '<input id="answer" oninput="enableBtn()" onkeypress="if(event.key===\'Enter\') checkAnswer()">';
+
+}
 
 let q = questions[index].q;
 let container = document.getElementById("answerContainer");
